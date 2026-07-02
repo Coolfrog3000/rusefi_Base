@@ -172,7 +172,7 @@ void configureArcticCat(TriggerWaveform *s) {
   }
 }
 
-void ConfigureDualSync(TriggerWaveform *s) {
+void configureDualSync(TriggerWaveform *s) {
 
 	s->initialize(FOUR_STROKE_CAM_SENSOR, SyncEdge::Rise);
 
