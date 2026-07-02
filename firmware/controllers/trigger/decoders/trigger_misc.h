@@ -23,3 +23,4 @@ void configureBenelli(TriggerWaveform *s);
  */
 void configure60degSingleTooth(TriggerWaveform *s);
 void configureArcticCat(TriggerWaveform *s);
+void configureDualSync(TriggerWaveform *s);
