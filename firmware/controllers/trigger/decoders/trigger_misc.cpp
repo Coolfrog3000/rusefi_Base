@@ -170,6 +170,19 @@ void configureArcticCat(TriggerWaveform *s) {
   for (int gapIndex = 1; gapIndex <= c; gapIndex++) {
     s->setTriggerSynchronizationGap3(gapIndex, 0.75, 1.25);
   }
+}
 
+void ConfigureDualSync(TriggerWaveform *s) {
 
+	s->initialize(FOUR_STROKE_CAM_SENSOR, SyncEdge::Rise);
+
+	s->isSynchronizationNeeded = false;
+
+	addSkippedToothTriggerEvents(TriggerWheel::T_SECONDARY, s, 8, 0, 0.06, 0, 360, 0, 720);
+  
+	s->addEvent720(720-22.5, TriggerValue::RISE, TriggerWheel::T_PRIMARY);
+  s->addEvent720(720, TriggerValue::FALL, TriggerWheel::T_PRIMARY);
+	
+  addSkippedToothTriggerEvents(TriggerWheel::T_SECONDARY, s, 8, 0, 0.06, 360, 360, 0, 720);
+  
 }
