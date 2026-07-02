@@ -311,6 +311,11 @@ typedef enum {
 	// Used by some V10 engines (e.g. Dodge Viper) whose crank trigger has 5-fold symmetry.
 	FOUR_STROKE_FIVE_TIMES_CRANK_SENSOR = 8,
 
+  //Same pattern repeated eight times per crank wheel. Used on Dual-Sync distributors with an
+  //"8 tooth crank wheel" (actually a 16 tooth wheel on the camshaft) and another seperate single tooth 
+  //cam wheel to resolve engine phase.
+  FOUR_STROKE_EIGHT_TIMES_CRANK_SENSOR = 9,
+
 } operation_mode_e;
 
 /**
