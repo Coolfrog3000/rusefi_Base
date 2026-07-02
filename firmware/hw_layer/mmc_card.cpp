@@ -276,6 +276,12 @@ static const char *fatErrors[] = {
 	"FR_INVALID_PARAMETER: Given parameter is invalid"
 };
 
+const char *getFatFsErrorDescription(FRESULT f_error) {
+	if (f_error <= FR_INVALID_PARAMETER)
+		return fatErrors[f_error];
+	return "unknown";
+}
+
 // print FAT error function
 void printFatFsError(const char *str, FRESULT f_error) {
 	static int fatFsErrors = 0;
@@ -285,7 +291,7 @@ void printFatFsError(const char *str, FRESULT f_error) {
 		return;
 	}
 
-	efiPrintf("%s FATfs Error %d %s", str, f_error, f_error <= FR_INVALID_PARAMETER ? fatErrors[f_error] : "unknown");
+	efiPrintf("%s FATfs Error %d %s", str, f_error, getFatFsErrorDescription(f_error));
 }
 
 // format, file access and MSD are used exclusively, we can union.
@@ -853,16 +859,16 @@ static int sdModeSwitchToIdle(SD_MODE from)
 
 // manages SD card mode depending on current power scheme
 static SD_MODE sdModeSelector() {
-	if (!usbConnected && !isIgnVoltage()) {
-		// No USB connection, no ignition voltage
-		// Are we about to switch off?
-		return SD_MODE_UNMOUNT;
-	}
-
 	if (sdTargetModeRequested) {
 		// user force selected mode
 		// preserve it until power off
 		return sdTargetMode;
+	}
+
+	if (!usbConnected && !isIgnVoltage()) {
+		// No USB connection, no ignition voltage
+		// Are we about to switch off?
+		return SD_MODE_UNMOUNT;
 	}
 
 	if (engineConfiguration->alwaysWriteSdCard) {
@@ -1056,13 +1062,16 @@ static THD_FUNCTION(MMCmonThread, arg) {
 			// Target mode is valid and we have failed to switch to it
 			if (current != target) {
 				efiPrintf("SD: failed to switch from %s to %s", sdModeName(sdMode), sdModeName(target));
-				// TODO: handle
+
+				sdTargetMode = SD_MODE_IDLE;
+				sdTargetModeRequested = false;
+
 				chThdSleepMilliseconds(1000);
 				sdCardSetCurrentMode(SD_MODE_IDLE);
 			} else {
 				efiPrintf("SD: switched from %s to %s", sdModeName(sdMode), sdModeName(target));
+				sdCardSetCurrentMode(target);
 			}
-			sdCardSetCurrentMode(target);
 		}
 
 		if (sdModeExecuter(sdMode) == 0) {
@@ -1175,8 +1184,18 @@ void initMmcCard() {
 
 #if EFI_PROD_CODE
 
-void sdCardRequestMode(SD_MODE mode)
+int sdCardRequestMode(SD_MODE mode)
 {
+	if (!isSdCardEnabled()) {
+		efiPrintf("SD card is not enabled in config!");
+		return -1;
+	}
+
+	if (cardBlockDevice == nullptr) {
+		efiPrintf("SD card is not inserted/failed to init");
+		return -2;
+	}
+
 	// Check if SD is not in transition state...
 	if (sdMode != mode) {
 		efiPrintf("sdCardRequestMode %s", sdModeName(mode));
@@ -1186,6 +1205,8 @@ void sdCardRequestMode(SD_MODE mode)
 	if (mode == SD_MODE_IDLE) {
 		sdTargetModeRequested = false;
 	}
+
+	return 0;
 }
 
 SD_MODE sdCardGetCurrentMode()
